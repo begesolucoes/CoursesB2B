@@ -1,0 +1,128 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. O Inquilino (Empresa Cliente)
+model Tenant {
+  id           String        @id @default(uuid())
+  name         String
+  slug         String        @unique // ex: "acme"
+  logoUrl      String?
+  primaryColor String        @default("#3b82f6")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  users        User[]
+  courses      Course[]
+  enrollments  Enrollment[]
+  attempts     ScormAttempt[]
+  tracking     ScormTracking[]
+}
+
+// 2. Usuários (Superadmin, RH, Aluno)
+model User {
+  id           String        @id @default(uuid())
+  tenantId     String?       // Opcional: nulo para Superadmin global
+  tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  email        String        @unique // Único globalmente para facilitar o login no MVP
+  passwordHash String
+  role         Role          @default(USER) // SUPERADMIN, RH, USER
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  enrollments  Enrollment[]
+
+  @@index([tenantId])
+}
+
+enum Role {
+  SUPERADMIN
+  RH
+  USER
+}
+
+// 3. Cursos
+model Course {
+  id           String        @id @default(uuid())
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  scormPackage ScormPackage?
+  enrollments  Enrollment[]
+
+  @@index([tenantId])
+}
+
+// 4. Pacote SCORM do Curso (SCORM 1.2 apenas para o MVP)
+model ScormPackage {
+  id           String        @id @default(uuid())
+  courseId     String        @unique
+  course       Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  scormVersion String        @default("1.2") // "1.2"
+  entryPoint   String        @default("index.html")
+  storagePath  String        // Caminho no Cloudflare R2
+  uploadedAt   DateTime      @default(now())
+}
+
+// 5. Matrícula / Associação Aluno-Curso
+model Enrollment {
+  id           String        @id @default(uuid())
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId     String
+  course       Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status       String        @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, COMPLETED
+  enrolledAt   DateTime      @default(now())
+  completedAt  DateTime?
+
+  attempts     ScormAttempt[]
+
+  @@unique([userId, courseId])
+  @@index([tenantId])
+}
+
+// 6. Tentativas de Execução do SCORM
+model ScormAttempt {
+  id             String         @id @default(uuid())
+  tenantId       String
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  enrollmentId   String
+  enrollment     Enrollment     @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  attemptNumber  Int            @default(1)
+  status         String         @default("incomplete") // incomplete, completed, passed, failed
+  scoreRaw       Float          @default(0.0)
+  lessonLocation String         @default("")
+  lastAccessed   DateTime       @default(now())
+
+  trackingData   ScormTracking[]
+
+  @@index([tenantId])
+}
+
+// 7. Dados Detalhados de Rastreamento SCORM 1.2 (Chave-Valor)
+model ScormTracking {
+  id             String         @id @default(uuid())
+  tenantId       String
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  attemptId      String
+  attempt        ScormAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  cmiKey         String         // ex: "cmi.core.suspend_data" ou "cmi.core.lesson_location"
+  cmiValue       String         @db.Text
+  updatedAt      DateTime       @default(now()) @updatedAt
+
+  @@unique([attemptId, cmiKey])
+  @@index([tenantId])
+}
