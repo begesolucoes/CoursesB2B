@@ -5,6 +5,60 @@ import { s3Client } from '@/lib/r2'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
+/**
+ * @swagger
+ * /api/admin/courses/presigned-url:
+ *   post:
+ *     summary: Gera uma URL assinada (Presigned URL) para upload direto para o R2/S3
+ *     tags:
+ *       - Admin Cursos
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - courseId
+ *               - fileName
+ *               - fileType
+ *             properties:
+ *               courseId:
+ *                 type: string
+ *                 description: ID do curso a ser atualizado
+ *               fileName:
+ *                 type: string
+ *                 description: Nome do arquivo (ex. curso.zip)
+ *               fileType:
+ *                 type: string
+ *                 description: Content-Type do arquivo (ex. application/zip)
+ *               tenantId:
+ *                 type: string
+ *                 description: ID da empresa/tenant (necessário se logado como Superadmin)
+ *     responses:
+ *       200:
+ *         description: URL assinada gerada com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 uploadUrl:
+ *                   type: string
+ *                   description: URL temporária para fazer o upload via PUT
+ *                 bucketKey:
+ *                   type: string
+ *                   description: Chave onde o arquivo será salvo no bucket
+ *                 bucketName:
+ *                   type: string
+ *                   description: Nome do bucket R2/S3
+ *       400:
+ *         description: Parâmetros obrigatórios ausentes.
+ *       403:
+ *         description: Não autorizado.
+ *       500:
+ *         description: Erro ao gerar credenciais de upload.
+ */
 // POST: Gera uma URL assinada (Presigned URL) para upload direto para o R2/S3
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)

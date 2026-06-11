@@ -7,6 +7,57 @@ import { GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sd
 import unzipper from 'unzipper'
 import { Readable } from 'stream'
 
+/**
+ * @swagger
+ * /api/admin/courses/unzip:
+ *   post:
+ *     summary: Descompacta pacote SCORM do R2 e atualiza curso
+ *     tags:
+ *       - Admin Cursos
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - courseId
+ *               - bucketKey
+ *             properties:
+ *               courseId:
+ *                 type: string
+ *                 description: ID do curso correspondente ao pacote
+ *               bucketKey:
+ *                 type: string
+ *                 description: Chave do arquivo zip temporário no R2/S3
+ *               tenantId:
+ *                 type: string
+ *                 description: ID da empresa/tenant (necessário se logado como Superadmin)
+ *     responses:
+ *       200:
+ *         description: Pacote descompactado e cadastrado com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 entryPoint:
+ *                   type: string
+ *                   description: Caminho do arquivo de entrada (ex. index.html)
+ *                 storagePath:
+ *                   type: string
+ *                   description: Prefixo do caminho dos arquivos descompactados no R2
+ *       400:
+ *         description: Parâmetros obrigatórios ausentes.
+ *       403:
+ *         description: Não autorizado.
+ *       404:
+ *         description: Arquivo zip não encontrado no R2.
+ *       500:
+ *         description: Erro ao processar o pacote SCORM.
+ */
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
 

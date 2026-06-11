@@ -6,6 +6,30 @@ import { resend } from '@/lib/resend'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Lista todos os colaboradores (alunos) da empresa do gestor logado
+ *     tags:
+ *       - Admin Usuários
+ *     parameters:
+ *       - in: query
+ *         name: tenantId
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: ID da empresa/tenant (obrigatório se for Superadmin, opcional se for RH)
+ *     responses:
+ *       200:
+ *         description: Lista de colaboradores retornada com sucesso.
+ *       400:
+ *         description: ID da empresa é obrigatório.
+ *       403:
+ *         description: Não autorizado (apenas RH ou Superadmin).
+ *       500:
+ *         description: Erro interno do servidor.
+ */
 // GET: Lista todos os colaboradores (alunos) da empresa do gestor logado
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -49,6 +73,71 @@ export async function GET(request: Request) {
   }
 }
 
+/**
+ * @swagger
+ * /api/admin/users:
+ *   post:
+ *     summary: Cadastra um novo colaborador (aluno) e opcionalmente o matricula em um curso
+ *     tags:
+ *       - Admin Usuários
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Nome do colaborador
+ *               email:
+ *                 type: string
+ *                 description: E-mail do colaborador (deve ser único globalmente)
+ *               courseId:
+ *                 type: string
+ *                 description: ID de um curso opcional para matricular o colaborador no momento do cadastro
+ *               tenantId:
+ *                 type: string
+ *                 description: ID da empresa/tenant (necessário se logado como Superadmin)
+ *     responses:
+ *       201:
+ *         description: Colaborador cadastrado com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     tempPassword:
+ *                       type: string
+ *                       description: Senha provisória gerada automaticamente
+ *                 enrollment:
+ *                   type: object
+ *                   nullable: true
+ *                   description: Dados da matrícula se courseId foi enviado
+ *                 emailSent:
+ *                   type: boolean
+ *                   description: Indica se o e-mail de onboarding via Resend foi enviado com sucesso
+ *       400:
+ *         description: Parâmetro obrigatório ausente, e-mail duplicado, ou erro de permissão do curso.
+ *       403:
+ *         description: Não autorizado.
+ *       500:
+ *         description: Erro interno do servidor.
+ */
 // POST: Cadastra um novo colaborador e opcionalmente o matricula em um curso
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)

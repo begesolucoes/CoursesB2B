@@ -6,6 +6,21 @@ import { resend } from '@/lib/resend'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
+/**
+ * @swagger
+ * /api/superadmin/tenants:
+ *   get:
+ *     summary: Lista todos os tenants (empresas) cadastradas
+ *     tags:
+ *       - Superadmin Tenants
+ *     responses:
+ *       200:
+ *         description: Lista de empresas cadastrada retornada com sucesso.
+ *       403:
+ *         description: Não autorizado (apenas SUPERADMIN).
+ *       500:
+ *         description: Erro interno do servidor.
+ */
 // GET: Lista todos os tenants (empresas) cadastradas
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -36,6 +51,85 @@ export async function GET() {
   }
 }
 
+/**
+ * @swagger
+ * /api/superadmin/tenants:
+ *   post:
+ *     summary: Cria um novo Tenant (Empresa) e o respectivo usuário gestor de RH
+ *     tags:
+ *       - Superadmin Tenants
+ *     parameters:
+ *       - in: header
+ *         name: x-superadmin-key
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Chave secreta de bypass de desenvolvimento (para testar via Postman/API Client sem sessão ativa)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - slug
+ *               - hrName
+ *               - hrEmail
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Nome da empresa cliente
+ *               slug:
+ *                 type: string
+ *                 description: Subdomínio/identificador exclusivo da empresa (será higienizado e transformado em minúsculas)
+ *               hrName:
+ *                 type: string
+ *                 description: Nome completo do gestor de RH
+ *               hrEmail:
+ *                 type: string
+ *                 description: E-mail de login do gestor de RH (deve ser único globalmente)
+ *     responses:
+ *       201:
+ *         description: Empresa e gestor de RH criados com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 tenant:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     slug:
+ *                       type: string
+ *                 hrUser:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     tempPassword:
+ *                       type: string
+ *                       description: Senha temporária do gestor
+ *                 emailSent:
+ *                   type: boolean
+ *                   description: Indica se o e-mail de onboarding via Resend foi enviado com sucesso
+ *       400:
+ *         description: Parâmetro obrigatório ausente, slug ou e-mail já em uso.
+ *       403:
+ *         description: Não autorizado (exige sessão ativa de SUPERADMIN ou chave de bypass válida).
+ *       500:
+ *         description: Erro interno do servidor.
+ */
 // POST: Cria um novo Tenant (Empresa) e o respectivo usuário gestor de RH
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)

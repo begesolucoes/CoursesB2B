@@ -3,6 +3,30 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+/**
+ * @swagger
+ * /api/admin/courses:
+ *   get:
+ *     summary: Lista todos os cursos cadastrados para a empresa logada
+ *     tags:
+ *       - Admin Cursos
+ *     parameters:
+ *       - in: query
+ *         name: tenantId
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: ID da empresa/tenant (obrigatório se for Superadmin, opcional se for RH)
+ *     responses:
+ *       200:
+ *         description: Lista de cursos retornada com sucesso.
+ *       400:
+ *         description: ID da empresa é obrigatório.
+ *       403:
+ *         description: Não autorizado (apenas RH ou Superadmin).
+ *       500:
+ *         description: Erro interno do servidor.
+ */
 // GET: Lista todos os cursos cadastrados para a empresa logada
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
@@ -40,6 +64,41 @@ export async function GET(request: Request) {
   }
 }
 
+/**
+ * @swagger
+ * /api/admin/courses:
+ *   post:
+ *     summary: Cadastra um novo curso (metadados iniciais)
+ *     tags:
+ *       - Admin Cursos
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 description: Título do curso
+ *               description:
+ *                 type: string
+ *                 description: Descrição do curso
+ *               tenantId:
+ *                 type: string
+ *                 description: ID da empresa/tenant (necessário se logado como Superadmin)
+ *     responses:
+ *       201:
+ *         description: Curso criado com sucesso.
+ *       400:
+ *         description: Título ou ID da empresa não informado.
+ *       403:
+ *         description: Não autorizado.
+ *       500:
+ *         description: Erro interno do servidor.
+ */
 // POST: Cadastra um novo curso (metadados iniciais)
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)

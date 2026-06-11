@@ -3,6 +3,69 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+/**
+ * @swagger
+ * /api/scorm/attempt:
+ *   post:
+ *     summary: Busca a tentativa ativa ou cria uma nova tentativa de curso para o Aluno
+ *     tags:
+ *       - SCORM Execução
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - enrollmentId
+ *             properties:
+ *               enrollmentId:
+ *                 type: string
+ *                 description: ID da matrícula correspondente
+ *     responses:
+ *       200:
+ *         description: Tentativa ativa retornada com sucesso (ou criada nova).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 attempt:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     attemptNumber:
+ *                       type: integer
+ *                     status:
+ *                       type: string
+ *                     scoreRaw:
+ *                       type: number
+ *                     lessonLocation:
+ *                       type: string
+ *                 scormPackage:
+ *                   type: object
+ *                   properties:
+ *                     entryPoint:
+ *                       type: string
+ *                     storagePath:
+ *                       type: string
+ *                     launchUrl:
+ *                       type: string
+ *                       description: URL completa para carregar o player SCORM
+ *       400:
+ *         description: ID de matrícula inválido ou curso sem pacote SCORM.
+ *       401:
+ *         description: Não autorizado (não logado).
+ *       403:
+ *         description: Acesso negado a esta matrícula.
+ *       404:
+ *         description: Matrícula não encontrada.
+ *       500:
+ *         description: Erro interno do servidor.
+ */
 // POST: Busca a tentativa ativa ou cria uma nova tentativa de curso para o Aluno
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)

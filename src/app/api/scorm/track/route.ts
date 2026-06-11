@@ -8,6 +8,52 @@ interface TrackingPayload {
   cmiData: Record<string, string>
 }
 
+/**
+ * @swagger
+ * /api/scorm/track:
+ *   post:
+ *     summary: Recebe requisições de persistência (LMSCommit) do Player SCORM e grava no banco
+ *     tags:
+ *       - SCORM Execução
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - attemptId
+ *               - cmiData
+ *             properties:
+ *               attemptId:
+ *                 type: string
+ *                 description: ID da tentativa ativa
+ *               cmiData:
+ *                 type: object
+ *                 additionalProperties:
+ *                   type: string
+ *                 description: Objeto chave-valor contendo os dados CMI do SCORM (ex. cmi.core.lesson_status, cmi.core.lesson_location, etc.)
+ *     responses:
+ *       200:
+ *         description: Dados de rastreamento persistidos com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *       400:
+ *         description: Payload de rastreamento inválido.
+ *       401:
+ *         description: Não autorizado (não logado).
+ *       403:
+ *         description: Não autorizado a alterar esta tentativa (não é o dono).
+ *       404:
+ *         description: Tentativa SCORM não encontrada.
+ *       500:
+ *         description: Erro interno do servidor.
+ */
 // POST: Recebe as requisições de LMSCommit() do Player SCORM e persiste no banco
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
