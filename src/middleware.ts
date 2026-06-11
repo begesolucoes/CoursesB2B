@@ -41,7 +41,7 @@ export function middleware(request: NextRequest) {
 }
 
 function extractSlug(host: string, url: URL): string | null {
-  // Em desenvolvimento, aceita um query param ?tenant=empresa-a para testes rápidos
+  // Em desenvolvimento, aceita um query param ?tenant=empresa-a
   if (process.env.NODE_ENV === 'development') {
     const tenantParam = url.searchParams.get('tenant')
     if (tenantParam) return tenantParam
@@ -49,12 +49,25 @@ function extractSlug(host: string, url: URL): string | null {
 
   // Remove a porta do host, caso exista (ex: localhost:3000 -> localhost)
   const hostWithoutPort = host.split(':')[0]
+
+  // 1. LISTA DE DOMÍNIOS PRINCIPAIS (Que NÃO devem ser tratados como tenants)
+  const mainDomains = [
+    'localhost',
+    'courses-b2-b.vercel.app',  // <-- Seu domínio da Vercel
+    'seu-dominio-principal.com'  // <-- Seu domínio final de produção (quando tiver)
+  ]
+
+  // Se o host atual for um domínio principal, não extrai slug (mostra a landing page)
+  if (mainDomains.includes(hostWithoutPort)) {
+    return null
+  }
+
   const parts = hostWithoutPort.split('.')
 
-  // Se for apenas localhost ou domínio principal sem subdomínio -> sem tenant (landing page)
+  // Se for apenas localhost ou domínio principal sem subdomínio -> sem tenant
   if (parts.length < 2) return null
   
-  // Ignora o prefixo www. (ex: www.plataforma.com -> sem tenant)
+  // Ignora o prefixo www.
   if (parts[0] === 'www') return null
 
   // Retorna a primeira parte como o slug do tenant (ex: empresa-a.lms.com -> empresa-a)
