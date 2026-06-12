@@ -206,7 +206,7 @@ export async function POST(request: Request) {
     if (resend) {
       try {
         await resend.emails.send({
-          from: 'LMS SCORM <onboarding@plataforma.com>', // Em produção usar domínio verificado
+          from: 'LMS SCORM <onboarding@resend.dev>', // Em produção com domínio verificado, altere aqui
           to: hrEmail,
           subject: 'Seu acesso ao LMS está pronto!',
           html: `

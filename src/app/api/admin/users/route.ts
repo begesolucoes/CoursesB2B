@@ -230,7 +230,7 @@ export async function POST(request: Request) {
     if (resend) {
       try {
         await resend.emails.send({
-          from: 'Treinamentos LMS <suporte@plataforma.com>',
+          from: 'Treinamentos LMS <onboarding@resend.dev>', // Em produção com domínio verificado, altere aqui
           to: email,
           subject: `Acesso liberado aos treinamentos da ${tenant.name}!`,
           html: `
