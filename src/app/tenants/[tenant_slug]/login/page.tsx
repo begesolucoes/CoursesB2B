@@ -1,18 +1,30 @@
+import { prisma } from '@/lib/prisma'
+import { notFound } from 'next/navigation'
+import TenantLoginForm from '@/components/auth/TenantLoginForm'
+
 interface PageProps {
   params: {
     tenant_slug: string
   }
 }
 
-export default function TenantLoginPage({ params }: PageProps) {
+export default async function TenantLoginPage({ params }: PageProps) {
+  // 1. Busca o tenant correspondente para obter informações de customização
+  const tenant = await prisma.tenant.findUnique({
+    where: { slug: params.tenant_slug }
+  })
+
+  if (!tenant) {
+    notFound()
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6">
-      <div className="w-full max-w-md bg-white rounded-lg shadow p-8">
-        <h1 className="text-xl font-bold text-slate-800 text-center">
-          Acesso à Plataforma - {params.tenant_slug.toUpperCase()}
-        </h1>
-        <p className="text-slate-500 text-sm text-center mt-1">Insira suas credenciais para continuar.</p>
-      </div>
+      <TenantLoginForm
+        tenantName={tenant.name}
+        tenantSlug={tenant.slug}
+        primaryColor={tenant.primaryColor}
+      />
     </div>
   )
 }
